@@ -1,0 +1,69 @@
+- hosts: all
+  vars:
+    elastic_host: master.elastic.l4lb.thisdcos.directory
+    elastic_port: 9200
+  become: yes
+  become_user: root
+  tasks:
+    - name: Install Filebeat
+      yum:
+        name: https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-5.0.0-x86_64.rpm
+        state: present
+    - name: Create DCOS Logs Directory
+      file:
+        path: /var/log/dcos
+        state: directory
+        mode: 0755
+    - name: Create Filebeat config
+      template:
+        src: templates/filebeat.yml.j2
+        dest: /etc/filebeat/filebeat.yml
+        backup: true
+    - name: Create dcos-journalctl-filebeat Service Definition
+      template:
+        src: templates/dcos-journalctl-filebeat.service.j2
+        dest: /etc/systemd/system/dcos-journalctl-filebeat.service
+        mode: 0755
+    - name: Enable dcos-journalctl-filebeat service
+      systemd:
+        name: dcos-journalctl-filebeat
+        state: started
+        enabled: yes
+        masked: no
+        daemon_reload: yes
+    - name: Enable Filebeat service
+      systemd:
+        name: filebeat
+        state: started
+        enabled: yes
+        masked: no
+        daemon_reload: yes
+    - name: Copy libexternal_container_logger plugin
+      copy:
+        src: files/libexternal_container_logger-0.1.4.so
+        dest: /opt/mesosphere/active/mesos-modules/lib/mesos/libexternal_container_logger-0.1.4.so
+        owner: root
+        group: root
+        mode: 0755
+    - name: Create symlink to plugin
+      file:
+        src: /opt/mesosphere/active/mesos-modules/lib/mesos/libexternal_container_logger-0.1.4.so
+        dest: /opt/mesosphere/active/mesos-modules/lib/mesos/libexternal_container_logger.so
+        state: link
+    - name: Get target of journal_logger_modules.json
+      stat:
+        path: /opt/mesosphere/etc/mesos-slave-modules/journal_logger_modules.json
+      register: symlink
+    - name: output target
+      debug:
+        msg: "path: {{ symlink.stat.lnk_target }}"
+    - name: Create mesos_external_container_logger.json
+      template:
+        src: templates/mesos_external_container_logger.json.j2
+        dest: /opt/mesosphere/etc/mesos-slave-modules/mesos_external_container_logger.json
+        mode: 0755
+    - name: Create filebeat-container-logger.sh
+      template:
+        src: templates/filebeat-container-logger.sh
+        dest: /usr/bin/filebeat-container-logger.sh
+        mode: 0755
