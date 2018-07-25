@@ -1,10 +1,10 @@
 {
   "libraries": [{
-    "file": "/usr/lib/libexternal_container_logger-0.1.0.so",
+    "file": "/opt/mesosphere/active/mesos-modules/lib/mesos/libexternal_container_logger.so",
     "modules": [{
       "name": "org_apache_mesos_ExternalContainerLogger",
       "parameters": [{"value": "/usr/bin/filebeat-container-logger.sh",
-                      "key": "external_logger_cmd"}]
+                      "key": "external_logger_binary"}]
     }]
   }]
 }

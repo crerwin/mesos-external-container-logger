@@ -7,4 +7,4 @@ COPY wandisco-svn.repo /etc/yum.repos.d/
 
 RUN yum update systemd
 RUN yum groupinstall -y "Development Tools"
-RUN yum install -y apache-maven python-devel java-1.8.0-openjdk-devel zlib-devel libcurl-devel openssl-devel cyrus-sasl-devel cyrus-sasl-md5 apr-devel subversion-devel apr-util-devel
+RUN yum install -y apache-maven python-devel java-1.8.0-openjdk-devel zlib-devel libcurl-devel openssl-devel cyrus-sasl-devel cyrus-sasl-md5 apr-devel subversion-devel apr-util-devel cmake cmake3

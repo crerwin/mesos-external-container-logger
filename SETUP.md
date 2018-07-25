@@ -22,3 +22,5 @@ dcos package install kibana
 
 # configure kibana
 1. set default index to `filebeat-*`
+
+# Run a service and watch the containers fail
