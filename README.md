@@ -18,7 +18,7 @@ CMake 3.0.0 or later is required to build.
 # Using on DC/OS
 
 ## Compile plugin
-Compile Mesos and the plugin on your node OS, and copy the resulting compiled plugin to `ansible/files`.
+Compile Mesos and the plugin on your node OS (set mesos version to 1.5.0 in both compile scripts), and copy the resulting compiled plugin to `ansible/files`.
 
 ## Test on Cluster
 
