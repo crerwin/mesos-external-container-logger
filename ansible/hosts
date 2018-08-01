@@ -10,3 +10,6 @@ dcos-private-agent-2
 dcos-private-agent-3
 dcos-private-agent-4
 dcos-private-agent-5
+
+[compiler]
+dcos-bootstrap

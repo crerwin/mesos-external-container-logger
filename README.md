@@ -51,3 +51,6 @@ dcos package install kibana
 1. set default index to `filebeat-*`
 
 ### Run a service and watch the containers fail
+
+# Two problems
+Flag is `--container_logger` not `--container-logger` and json needs to be changed to external_logger_script for the flag

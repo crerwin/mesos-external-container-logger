@@ -1,0 +1,75 @@
+---
+- hosts: compiler
+  name: compiler
+  become: true
+
+  tasks:
+
+  - name: Install first round packages
+    yum:
+      name: "{{ packages }}"
+      state: latest
+    vars:
+      packages:
+        - wget
+        - git
+        - vim
+        - tar
+
+  - name: Add Maven yum repo
+    get_url:
+      url: http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo
+      dest: /etc/yum.repos.d/epel-apache-maven.repo
+
+  - name: Install epel-release
+    yum:
+      name: epel-release
+      state: latest
+
+  - name: WANdisco svn repo file
+    template:
+      src: templates/wandisco-svn.repo.j2
+      dest: /etc/yum.repos.d/wandisco-svn.repo
+
+  - name: Update systemd
+    yum:
+      name: systemd
+      state: latest
+
+  - name: Install Development Tools
+    yum:
+      name: "@Development Tools"
+      state: latest
+
+  - name: Install more packages
+    yum:
+      name: "{{ packages }}"
+    vars:
+      packages:
+        - jq
+        - apache-maven
+        - python-devel
+        - python-six
+        - python-virtualenv
+        - java-1.8.0-openjdk-devel
+        - zlib-devel
+        - libcurl-devel
+        - openssl-devel
+        - cyrus-sasl-devel
+        - cyrus-sasl-md5
+        - apr-devel
+        - subversion-devel
+        - apr-util-devel
+        - cmake
+        - cmake3
+
+  - name: Install Filebeat
+    yum:
+      name: https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-5.0.0-x86_64.rpm
+      state: present
+
+  - name: Create Mesos working directory
+    file:
+      path: /var/lib/mesos
+      state: directory
+      mode: 0755
