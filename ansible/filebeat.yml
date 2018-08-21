@@ -9,6 +9,11 @@
       yum:
         name: https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-5.0.0-x86_64.rpm
         state: present
+    - name: Create symlink to filebeat
+      file:
+        src: /usr/share/filebeat/bin/filebeat
+        dest: /usr/bin/filebeat
+        state: link
     - name: Install epel-release
       yum:
         name: epel-release
@@ -72,10 +77,10 @@
         mode: 0755
       notify: restart dcos-mesos-slave service
     - name: Set MESOS_CONTAINER_LOGGER
-      lineinfile:
-        path: /opt/mesosphere/etc/mesos-slave-common
-        regexp: '^MESOS_CONTAINER_LOGGER='
-        line: 'MESOS_CONTAINER_LOGGER=org_apache_mesos_ExternalContainerLogger'
+      template:
+        src: templates/mesos-slave-common.j2
+        dest: /var/lib/dcos/mesos-slave-common
+        mode: 0644
       notify: restart dcos-mesos-slave service
 
   handlers:

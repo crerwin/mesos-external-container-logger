@@ -1,35 +1,34 @@
 #!/bin/bash
-cat > $(echo "$MESOS_LOG_STREAM" | tr '[:upper:]' '[:lower:]')
-#
-# config_path="$MESOS_LOG_SANDBOX_DIRECTORY/filebeat-$MESOS_LOG_STREAM.yml"
-#
-# mesos_fields=$(echo "$MESOS_EXECUTORINFO_JSON" | \
-#                 jq -r ".command.environment.variables
-#                          |map(\"\(.name):\(.value|tostring)\")|.[]" | \
-#                 # Skip empty variables, use mesos_ prefix, convert to lowercase
-#                 awk -F: 'length($2) > 0 {
-#                            $1=tolower($1);
-#                            if (!match($1, "^mesos_.*")) {
-#                              $1="mesos_" $1;
-#                            }
-#                            printf("%s: \"%s\"\n        ", $1, $2);
-#                          }')
-#
-# cat <<EOF > $config_path
-# filebeat:
-#   prospectors:
-#     -
-#       paths:
-#         - "-"
-#       input_type: stdin
-#       close_eof: true
-#       fields:
-#         mesos_log_stream: $MESOS_LOG_STREAM
-#         mesos_log_sandbox_directory: $MESOS_LOG_SANDBOX_DIRECTORY
-#         $mesos_fields
-#
-# output.elasticsearch:
-#   hosts: ["{{ elastic_host }}:{{ elastic_port }}"]
-# EOF
-#
-# /usr/bin/filebeat -c $config_path
+config_path="$MESOS_LOG_SANDBOX_DIRECTORY/filebeat-$MESOS_LOG_STREAM.yml"
+
+mesos_fields=$(echo "$MESOS_LOG_EXECUTORINFO_JSON" | \
+                jq -r ".command.environment.variables
+                         |map(\"\(.name):\(.value|tostring)\")|.[]" | \
+                # Skip empty variables, use mesos_ prefix, convert to lowercase
+                awk -F: 'length($2) > 0 {
+                           $1=tolower($1);
+                           if (!match($1, "^mesos_.*")) {
+                             $1="mesos_" $1;
+                           }
+                           printf("%s: \"%s\"\n        ", $1, $2);
+                         }')
+
+
+cat <<EOF > $config_path
+filebeat:
+  prospectors:
+    -
+      paths:
+        - "-"
+      input_type: stdin
+      close_eof: true
+      fields:
+        mesos_log_stream: $MESOS_LOG_STREAM
+        mesos_log_sandbox_directory: $MESOS_LOG_SANDBOX_DIRECTORY
+        $mesos_fields
+
+output.elasticsearch:
+  hosts: ["{{ elastic_host }}:{{ elastic_port }}"]
+EOF
+
+/usr/bin/filebeat.sh -c $config_path
