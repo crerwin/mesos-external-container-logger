@@ -15,6 +15,26 @@ Use the `compile.sh` and optionally the
 `build-mesos.sh` scripts to build the module for other distributions.
 CMake 3.0.0 or later is required to build.
 
+# Purpose
+
+This plugin allows us to extract some useful information from the Mesos executor.  We can tag outgoing log messages with this information.
+
+# How it works
+
+The plugin hooks into the Mesos slave process and gets information from the Mesos executor protobuf.  For each Mesos task, it starts a new sidecar process that is considered part of the Mesos task.  This sidecar executable is provided through a configuration file, and can either be a shell script or a binary.  It is important to note that if this second process fails, the entire Mesos task will fail (and Marathon will restart it elsewhere).
+
+The sidecar process started by the plugin has 3 important environment variables.  These variables only exist in the sidecar process, not in the main Mesos task process:
+
+|variable|description|
+---|---
+|MESOS_LOG_STREAM|STDOUT or STDERR|
+|MESOS_LOG_SANDBOX_DIRECTORY|The Mesos task's sandbox directory|
+|MESOS_LOG_EXECUTORINFO_JSON|json containing all the pertinent information that the plugin acquired from the executor protobuf|
+
+Note that "MESOS_LOG_" is simply a prefix.
+
+The blog post this is based on shows an example of writing out a Filebeat configuration with these additional fields, and then starting a new Filebeat process.  This is done for both STDOUT and STDERR.  This means that for every 1 process you are running in Mesos, you are starting 3 additional processes (the sidecar process and two Filebeat processes).  If anything kills the sidecar process (for instance Filebeat exiting) your Mesos task goes down.
+
 # Using on DC/OS
 
 ## Compile plugin
