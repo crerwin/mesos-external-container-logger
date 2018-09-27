@@ -1,4 +1,5 @@
-- hosts: dcos_private_agent
+- hosts:
+  - dcos_private_agent
   vars:
     elastic_host: master.elastic.l4lb.thisdcos.directory
     elastic_port: 9200
@@ -7,13 +8,13 @@
   tasks:
     - name: Install Filebeat
       yum:
-        name: https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-5.0.0-x86_64.rpm
+        name: https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-6.4.0-x86_64.rpm
         state: present
-    - name: Create symlink to filebeat
-      file:
-        src: /usr/share/filebeat/bin/filebeat
-        dest: /usr/bin/filebeat
-        state: link
+    # - name: Create symlink to filebeat
+    #   file:
+    #     src: /usr/share/filebeat/bin/filebeat
+    #     dest: /usr/bin/filebeat
+    #     state: link
     - name: Install epel-release
       yum:
         name: epel-release
@@ -27,6 +28,15 @@
         path: /var/log/dcos
         state: directory
         mode: 0755
+    - name: Create Filebeat configs directory
+      file:
+        path: /etc/filebeat/configs
+        state: directory
+        mode: 0755
+    - name: Create Filebeat system input config
+      template:
+        src: templates/fb_system.yml.j2
+        dest: /etc/filebeat/configs/fb_system.yml
     - name: Create Filebeat config
       template:
         src: templates/filebeat.yml.j2
@@ -51,40 +61,40 @@
         enabled: yes
         masked: no
         daemon_reload: yes
-    - name: Copy libexternal_container_logger plugin
-      copy:
-        src: files/libexternal_container_logger-0.1.4.so
-        dest: /opt/mesosphere/active/mesos-modules/lib/mesos/libexternal_container_logger-0.1.4.so
-        owner: root
-        group: root
-        mode: 0755
-      notify: restart dcos-mesos-slave service
-    - name: Create symlink to plugin
-      file:
-        src: /opt/mesosphere/active/mesos-modules/lib/mesos/libexternal_container_logger-0.1.4.so
-        dest: /opt/mesosphere/active/mesos-modules/lib/mesos/libexternal_container_logger.so
-        state: link
-    - name: Create mesos_external_container_logger.json
-      template:
-        src: templates/mesos_external_container_logger.json.j2
-        dest: /opt/mesosphere/etc/mesos-slave-modules/mesos_external_container_logger.json
-        mode: 0755
-      notify: restart dcos-mesos-slave service
-    - name: Create filebeat-container-logger.sh
-      template:
-        src: templates/filebeat-container-logger.sh.j2
-        dest: /usr/bin/filebeat-container-logger.sh
-        mode: 0755
-      notify: restart dcos-mesos-slave service
-    - name: Set MESOS_CONTAINER_LOGGER
-      template:
-        src: templates/mesos-slave-common.j2
-        dest: /var/lib/dcos/mesos-slave-common
-        mode: 0644
-      notify: restart dcos-mesos-slave service
-
-  handlers:
-    - name: restart dcos-mesos-slave service
-      systemd:
-        name: dcos-mesos-slave
-        state: restarted
+  #   - name: Copy libexternal_container_logger plugin
+  #     copy:
+  #       src: files/libexternal_container_logger-0.1.4.so
+  #       dest: /opt/mesosphere/active/mesos-modules/lib/mesos/libexternal_container_logger-0.1.4.so
+  #       owner: root
+  #       group: root
+  #       mode: 0755
+  #     notify: restart dcos-mesos-slave service
+  #   - name: Create symlink to plugin
+  #     file:
+  #       src: /opt/mesosphere/active/mesos-modules/lib/mesos/libexternal_container_logger-0.1.4.so
+  #       dest: /opt/mesosphere/active/mesos-modules/lib/mesos/libexternal_container_logger.so
+  #       state: link
+  #   - name: Create mesos_external_container_logger.json
+  #     template:
+  #       src: templates/mesos_external_container_logger.json.j2
+  #       dest: /opt/mesosphere/etc/mesos-slave-modules/mesos_external_container_logger.json
+  #       mode: 0755
+  #     notify: restart dcos-mesos-slave service
+  #   - name: Create filebeat-container-logger.sh
+  #     template:
+  #       src: templates/filebeat-container-logger.sh.j2
+  #       dest: /usr/bin/filebeat-container-logger.sh
+  #       mode: 0755
+  #     notify: restart dcos-mesos-slave service
+  #   - name: Set MESOS_CONTAINER_LOGGER
+  #     template:
+  #       src: templates/mesos-slave-common.j2
+  #       dest: /var/lib/dcos/mesos-slave-common
+  #       mode: 0644
+  #     notify: restart dcos-mesos-slave service
+  #
+  # handlers:
+  #   - name: restart dcos-mesos-slave service
+  #     systemd:
+  #       name: dcos-mesos-slave
+  #       state: restarted

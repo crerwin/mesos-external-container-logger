@@ -1,9 +1,44 @@
 #!/bin/bash
+
+while [ -z "$MESOS_LOG_STREAM" ]; do
+  echo "MESOS_LOG_STREAM is unset.  Waiting until it is set."
+  sleep 5
+done
+
+while [ -z "$MESOS_LOG_SANDBOX_DIRECTORY" ]; do
+  echo "MESOS_LOG_SANDBOX_DIRECTORY is unset.  Waiting until it is set."
+  sleep 5
+done
+
+while [ -z "$MESOS_LOG_EXECUTORINFO_JSON" ]; do
+  echo "MESOS_LOG_EXECUTORINFO_JSON is unset.  Waiting until it is set."
+  sleep 5
+done
+
+until [ "$MESOS_LOG_STREAM" = "STDOUT" ] || [ "$MESOS_LOG_STREAM" = "STDERR" ]; do
+  echo "MESOS_LOG_STREAM environment variable is not STDOUT or STDERR.  Waiting until it is."
+  sleep 5
+done
+
+echo "executorinfo: $MESOS_LOG_EXECUTORINFO_JSON :end" >> /tmp/logger.log
+
 config_path="$MESOS_LOG_SANDBOX_DIRECTORY/filebeat-$MESOS_LOG_STREAM.yml"
+echo "config_path: $config_path"  >> /tmp/logger.log
 
 mesos_fields=$(echo "$MESOS_LOG_EXECUTORINFO_JSON" | \
-                jq -r ".command.environment.variables
-                         |map(\"\(.name):\(.value|tostring)\")|.[]" | \
+                jq -r '. |  if ( .command | has("environment"))
+                            then
+                              (.command.environment.variables |
+                               map("\(.name):\(.value|tostring)")|.[])
+                            else
+                              (([{"name": "EXECUTOR_ID", "value": .executor_id.value},
+                                {"name": "FRAMEWORK_ID", "value": .framework_id.value},
+                                {"name": "CONTAINER_TYPE", "value": .container.type}]|
+                                 map("\(.name):\(.value|tostring)")|.[])
+                              ,(
+                                .labels.labels | map("\(.key):\(.value|tostring)") |.[]
+                              ) )
+                            end'  | \
                 # Skip empty variables, use mesos_ prefix, convert to lowercase
                 awk -F: 'length($2) > 0 {
                            $1=tolower($1);
@@ -13,7 +48,7 @@ mesos_fields=$(echo "$MESOS_LOG_EXECUTORINFO_JSON" | \
                            printf("%s: \"%s\"\n        ", $1, $2);
                          }')
 
-
+echo "mesos_fields: $mesos_fields"
 cat <<EOF > $config_path
 filebeat:
   prospectors:
@@ -31,4 +66,12 @@ output.elasticsearch:
   hosts: ["{{ elastic_host }}:{{ elastic_port }}"]
 EOF
 
-/usr/bin/filebeat.sh -c $config_path
+#cat > $(echo "$MESOS_LOG_STREAM" | tr '[:upper:]' '[:lower:]')
+#
+#
+# /usr/bin/filebeat -c $config_path || echo "filebeat failed" >> /tmp/logger.log
+
+while [ true ]; do
+  echo "logging!" >> /tmp/logger.log
+  sleep 30
+done

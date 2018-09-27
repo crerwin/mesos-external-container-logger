@@ -21,7 +21,13 @@ This plugin allows us to extract some useful information from the Mesos executor
 
 # How it works
 
-The plugin hooks into the Mesos slave process and gets information from the Mesos executor protobuf.  For each Mesos task, it starts a new sidecar process that is considered part of the Mesos task.  This sidecar executable is provided through a configuration file, and can either be a shell script or a binary.  It is important to note that if this second process fails, the entire Mesos task will fail (and Marathon will restart it elsewhere).
+## Mesos Default
+
+By default Mesos uses a plugin called ContainerLogger.  Its job is to capture STDOUT and STERR from the Mesos task and write it to disk in the task's sandbox.  These files are the ones we see when we look at logs in the DC/OS UI.  The shortcoming is that it is difficult or impossible to see logs from tasks that exited days or weeks in the past.
+
+## External Container Logger
+
+This plugin hooks into the Mesos slave process and gets some useful information from the Mesos executor protobuf.  Most importantly it identifies the marathon framework and/or application ID so it can be correlated with the task ID for later log inspection.  For each Mesos task, it starts a new sidecar process that is considered part of the Mesos task.  This sidecar executable is provided through a configuration file, and can either be a shell script or a binary.  It is important to note that if this second process fails, the entire Mesos task will fail (and Marathon will restart it elsewhere).
 
 The sidecar process started by the plugin has 3 important environment variables.  These variables only exist in the sidecar process, not in the main Mesos task process:
 
